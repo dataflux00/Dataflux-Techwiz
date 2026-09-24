@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DineIQ Analytics — MenuMatrix Dining Intelligence</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{ --primary:#e8590c; --primary-dark:#d9480f; --dark:#15181d; --bg:#f4f6f9; }
+*{ font-family:'Segoe UI',system-ui,-apple-system,sans-serif; }
+body{ background:var(--bg); }
+/* ---------- LOGIN ---------- */
+#login-screen{ position:fixed; inset:0; z-index:2000; display:flex; align-items:center;
+  background:linear-gradient(135deg,#15181d 0%,#2b2118 60%,#4a2c12 100%); }
+.login-card{ width:400px; background:#fff; border-radius:16px; padding:40px; }
+.brand-logo{ width:64px;height:64px;border-radius:14px;background:var(--primary);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:30px; }
+/* ---------- SIDEBAR ---------- */
+#sidebar{ width:260px; min-height:100vh; background:var(--dark); color:#c9cdd4; position:fixed;
+  top:0;left:0; z-index:1000; transition:.25s; }
+#sidebar.collapsed{ width:78px; }
+#sidebar.collapsed .nav-text,#sidebar.collapsed .brand-name,#sidebar.collapsed .nav-sec{ display:none; }
+#app{ margin-left:260px; transition:.25s; }
+#app.expanded{ margin-left:78px; }
+.nav-link{ color:#c9cdd4; border-radius:8px; padding:9px 14px; margin:2px 10px; font-size:.92rem; }
+.nav-link:hover{ background:rgba(255,255,255,.07); color:#fff; }
+.nav-link.active{ background:var(--primary); color:#fff; }
+.nav-sec{ font-size:.68rem; letter-spacing:.12em; text-transform:uppercase; color:#6c757d;
+  padding:14px 24px 4px; }
+/* ---------- TOPBAR ---------- */
+.topbar{ background:#fff; border-bottom:1px solid #e7e9ee; position:sticky; top:0; z-index:900; }
+/* ---------- VIEW ---------- */
+.view{ display:none; } .view.active{ display:block; }
+.kpi{ background:#fff; border-radius:12px; padding:18px; border:1px solid #eceff4; height:100%; }
+.kpi .ic{ width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px; }
+.card{ border:1px solid #eceff4; border-radius:12px; }
+.chart-box{ position:relative; height:300px; }
+.chart-box-sm{ position:relative; height:230px; }
+.table thead th{ font-size:.75rem; text-transform:uppercase; letter-spacing:.04em;
+  color:#6c757d; background:#f8f9fb; }
+.badge-soft{ padding:.45em .7em; font-weight:600; border-radius:6px; font-size:.75rem; }
+.prio-Critical{ background:#fde5e5;color:#c92a2a } .prio-High{ background:#fff0d6;color:#d9480f }
+.prio-Medium{ background:#e3edf9;color:#1864ab } .prio-Low{ background:#e9f7e9;color:#2b8a3e }
+.stat-match{ background:#e9f7e9;color:#2b8a3e } .stat-mismatch{ background:#fde5e5;color:#c92a2a }
+@media(max-width:992px){ #sidebar{display:none} #app{margin-left:0} }
+</style>
+</head>
+<body>
+
+<!-- ================= LOGIN ================= -->
+<div id="login-screen">
+  <div class="login-card shadow">
+    <div class="d-flex align-items-center gap-3 mb-4">
+      <div class="brand-logo"><i class="bi bi-egg-fried"></i></div>
+      <div>
+        <h4 class="mb-0 fw-bold">DineIQ <span style="color:var(--primary)">Analytics</span></h4>
+        <small class="text-muted">MenuMatrix Dining Intelligence</small>
+      </div>
+    </div>
+    <div class="alert alert-warning py-2 small"><i class="bi bi-info-circle"></i> Demo credentials:
+      <b>admin/admin123</b> · <b>manager/manager123</b> · <b>analyst/analyst123</b></div>
+    <div class="mb-3"><label class="form-label small fw-semibold">User ID</label>
+      <input id="login-user" class="form-control" placeholder="Enter user id"></div>
+    <div class="mb-3"><label class="form-label small fw-semibold">Password</label>
+      <input id="login-pass" type="password" class="form-control" placeholder="••••••••"></div>
+    <div class="mb-3"><label class="form-label small fw-semibold">Role</label>
+      <select id="login-role" class="form-select">
+        <option>Administrator</option><option>Restaurant Manager</option>
+        <option>Regional Manager</option><option>Analyst</option></select></div>
+    <button class="btn btn-primary w-100 fw-semibold" style="background:var(--primary);border:0" onclick="doLogin()">
+      <i class="bi bi-box-arrow-in-right"></i> Secure Login</button>
+    <p class="text-center text-muted small mt-3 mb-0">© Aptech · Data Science Intelligence Arena</p>
+  </div>
+</div>
+
+<!-- ================= SIDEBAR ================= -->
+<nav id="sidebar">
+  <div class="d-flex align-items-center gap-2 px-3 py-4">
+    <div class="brand-logo" style="width:42px;height:42px;font-size:20px"><i class="bi bi-egg-fried"></i></div>
+    <div class="brand-name"><div class="fw-bold text-white">DineIQ Analytics</div>
+    <small class="text-secondary">Big Data Intelligence</small></div>
+  </div>
+  <div class="pb-4">
+    <div class="nav-sec">Overview</div>
+    <a class="nav-link" data-nav="dashboard"><i class="bi bi-speedometer2 me-2"></i><span class="nav-text">Executive Dashboard</span></a>
+    <div class="nav-sec">Intelligence</div>
+    <a class="nav-link" data-nav="menu"><i class="bi bi-journal-richtext me-2"></i><span class="nav-text">Menu Intelligence</span></a>
+    <a class="nav-link" data-nav="customer"><i class="bi bi-people me-2"></i><span class="nav-text">Customer Intelligence</span></a>
+    <a class="nav-link" data-nav="basket"><i class="bi bi-basket me-2"></i><span class="nav-text">Market Basket</span></a>
+    <a class="nav-link" data-nav="wastage"><i class="bi bi-trash3 me-2"></i><span class="nav-text">Wastage</span></a>
+    <a class="nav-link" data-nav="promotions"><i class="bi bi-tags me-2"></i><span class="nav-text">Promotions & Pricing</span></a>
+    <a class="nav-link" data-nav="locations"><i class="bi bi-geo-alt me-2"></i><span class="nav-text">Locations</span></a>
+    <div class="nav-sec">Forecasting</div>
+    <a class="nav-link" data-nav="forecast"><i class="bi bi-graph-up-arrow me-2"></i><span class="nav-text">Demand Forecast</span></a>
+    <div class="nav-sec">Big Data Ops</div>
+    <a class="nav-link" data-nav="quality"><i class="bi bi-database-check me-2"></i><span class="nav-text">Data Quality & Spark</span></a>
+    <div class="nav-sec">Models</div>
+    <a class="nav-link" data-nav="compare"><i class="bi bi-shuffle me-2"></i><span class="nav-text">Spark vs Python</span></a>
+    <div class="nav-sec">Decision Tools</div>
+    <a class="nav-link" data-nav="recommend"><i class="bi bi-lightbulb me-2"></i><span class="nav-text">Recommendations</span></a>
+    <a class="nav-link" data-nav="whatif"><i class="bi bi-sliders me-2"></i><span class="nav-text">What-If Analysis</span></a>
+    <div class="nav-sec">Output</div>
+    <a class="nav-link" data-nav="reports"><i class="bi bi-download me-2"></i><span class="nav-text">Reports & Export</span></a>
+  </div>
+</nav>
+
+<!-- ================= APP ================= -->
+<div id="app">
+
+  <!-- TOPBAR -->
+  <div class="topbar px-3 py-2 d-flex align-items-center gap-3 flex-wrap">
+    <button class="btn btn-light btn-sm" onclick="toggleSidebar()"><i class="bi bi-list"></i></button>
+    <h6 class="mb-0 fw-semibold" id="page-title">Executive Dashboard</h6>
+    <div class="ms-auto d-flex align-items-center gap-2 flex-wrap">
+      <!-- Step 48: Global filters -->
+      <input type="date" class="form-control form-control-sm" value="2024-01-01" id="flt-from">
+      <input type="date" class="form-control form-control-sm" value="2024-12-31" id="flt-to">
+      <select class="form-select form-select-sm" style="width:170px" id="flt-loc">
+        <option>All Locations (20)</option><option>L01 — CP, New Delhi</option>
+        <option>L02 — Bandra, Mumbai</option><option>L03 — Koramangala, Bengaluru</option>
+        <option>L04 — Banjara Hills, Hyderabad</option><option>L05 — Anna Nagar, Chennai</option></select>
+      <select class="form-select form-select-sm" style="width:150px">
+        <option>All Categories</option><option>Main Course</option><option>Snacks</option>
+        <option>Beverages</option><option>Desserts</option><option>South Indian</option></select>
+      <button class="btn btn-sm text-white" style="background:var(--primary)" onclick="toast('Filters applied (demo)')"><i class="bi bi-funnel"></i> Apply</button>
+      <div class="dropdown">
+        <button class="btn btn-light btn-sm position-relative" data-bs-toggle="dropdown">
+          <i class="bi bi-bell"></i><span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">7</span></button>
+        <ul class="dropdown-menu dropdown-menu-end shadow p-3" style="width:300px">
+          <li class="fw-semibold small mb-2"><i class="bi bi-exclamation-triangle text-danger"></i> Anomaly Alerts</li>
+          <li class="small py-1 border-bottom">Sales spike +240% @ L01 (12 Dec)</li>
+          <li class="small py-1 border-bottom">Rating flood: M013 (46 ratings/hr)</li>
+          <li class="small py-1 border-bottom">Duplicate transactions: 3,146 detected</li>
+          <li class="small py-1">Unusual discount 72% on Order #48213</li></ul></div>
+      <div class="dropdown">
+        <button class="btn btn-light btn-sm" data-bs-toggle="dropdown">
+          <i class="bi bi-person-circle"></i> <span id="tb-user">admin</span>
+          <span class="badge bg-dark ms-1" id="tb-role">Admin</span></button>
+        <ul class="dropdown-menu dropdown-menu-end shadow">
+          <li><a class="dropdown-item small" href="#"><i class="bi bi-person"></i> Profile</a></li>
+          <li><a class="dropdown-item small" href="#"><i class="bi bi-clock-history"></i> Audit Trail</a></li>
+          <li><hr class="dropdown-divider"></li>
+          <li><a class="dropdown-item small text-danger" href="#" onclick="logout()"><i class="bi bi-box-arrow-right"></i> Logout</a></li></ul></div>
+    </div>
+  </div>
+
+  <div class="p-3">
+
+  <!-- ============ 1. EXECUTIVE DASHBOARD (Step 42) ============ -->
+  <section class="view" id="view-dashboard">
+    <div class="row g-3 mb-3">
+      <div class="col-6 col-lg-3"><div class="kpi"><div class="d-flex justify-content-between"><div><small class="text-muted">TOTAL REVENUE</small><div class="fs-4 fw-bold">₹8.42 Cr</div><small class="text-success"><i class="bi bi-arrow-up"></i> +11.4% YoY</small></div><div class="ic" style="background:#fff0d6;color:#d9480f"><i class="bi bi-cash-stack"></i></div></div></div></div>
+      <div class="col-6 col-lg-3"><div class="kpi"><div class="d-flex justify-content-between"><div><small class="text-muted">TOTAL PROFIT</small><div class="fs-4 fw-bold">₹3.10 Cr</div><small class="text-success"><i class="bi bi-arrow-up"></i> +8.9% YoY</small></div><div class="ic" style="background:#e9f7e9;color:#2b8a3e"><i class="bi bi-bank"></i></div></div></div></div>
+      <div class="col-6 col-lg-3"><div class="kpi"><div class="d-flex justify-content-between"><div><small class="text-muted">TOTAL ORDERS</small><div class="fs-4 fw-bold">1,28,540</div><small class="text-muted">12 months</small></div><div class="ic" style="background:#e3edf9;color:#1864ab"><i class="bi bi-receipt"></i></div></div></div></div>
+      <div class="col-6 col-lg-3"><div class="kpi"><div class="d-flex justify-content-between"><div><small class="text-muted">AVG ORDER VALUE</small><div class="fs-4 fw-bold">₹655</div><small class="text-success"><i class="bi bi-arrow-up"></i> +4.2%</small></div><div class="ic" style="background:#f3e8ff;color:#862e9c"><i class="bi bi-cart3"></i></div></div></div></div>
+      <div class="col-6 col-lg-3"><div class="kpi"><div class="d-flex justify-content-between"><div><small class="text-muted">ACTIVE CUSTOMERS</small><div class="fs-4 fw-bold">52,340</div><small class="text-muted">of 52,340 total</small></div><div class="ic" style="background:#e9f7e9;color:#2b8a3e"><i class="bi bi-people"></i></div></div></div></div>
+      <div class="col-6 col-lg-3"><div class="kpi"><div class="d-flex justify-content-between"><div><small class="text-muted">REPEAT CUSTOMERS</small><div class="fs-4 fw-bold">38.2%</div><small class="text-success">19,990 customers</small></div><div class="ic" style="background:#fff0d6;color:#d9480f"><i class="bi bi-arrow-repeat"></i></div></div></div></div>
+      <div class="col-6 col-lg-3"><div class="kpi"><div class="d-flex justify-content-between"><div><small class="text-muted">WASTAGE COST</small><div class="fs-4 fw-bold">₹18.4 L</div><small class="text-danger"><i class="bi bi-arrow-up"></i> +2.1% — action needed</small></div><div class="ic" style="background:#fde5e5;color:#c92a2a"><i class="bi bi-trash3"></i></div></div></div></div>
+      <div class="col-6 col-lg-3"><div class="kpi"><div class="d-flex justify-content-between"><div><small class="text-muted">FORECAST DEMAND (30d)</small><div class="fs-4 fw-bold">42,180</div><small class="text-muted">MAPE 8.7%</small></div><div class="ic" style="background:#e3edf9;color:#1864ab"><i class="bi bi-graph-up-arrow"></i></div></div></div></div>
+    </div>
+    <div class="row g-3 mb-3">
+      <div class="col-lg-8"><div class="card p-3"><h6 class="fw-semibold mb-3"><i class="bi bi-graph-up me-1" style="color:var(--primary)"></i> Revenue & Profit Trend (12 Months)</h6><div class="chart-box"><canvas id="ch-revtrend"></canvas></div></div></div>
+      <div class="col-lg-4"><div class="card p-3"><h6 class="fw-semibold mb-3"><i class="bi bi-diagram-3 me-1" style="color:var(--primary)"></i> Orders by Channel</h6><div class="chart-box"><canvas id="ch-channel"></canvas></div></div></div>
+    </div>
+    <div class="row g-3 mb-3">
+      <div class="col-lg-6"><div class="card p-3"><h6 class="fw-semibold mb-3"><i class="bi bi-clock-history me-1" style="color:var(--primary)"></i> Peak Ordering Hours</h6><div class="chart-box"><canvas id="ch-peakhours"></canvas></div></div></div>
+      <div class="col-lg-6"><div class="card p-3"><h6 class="fw-semibold mb-3"><i class="bi bi-grid-3x3 me-1" style="color:var(--primary)"></i> Menu Classification Distribution (150 items)</h6><div class="chart-box"><canvas id="ch-classdist"></canvas></div></div></div>
+    </div>
+    <div class="row g-3">
+      <div class="col-lg-6"><div class="card p-3 h-100">
+        <h6 class="fw-semibold mb-3"><span class="badge bg-danger">5 Critical</span> Priority Recommendations</h6>
+        <div class="small">
+          <div class="d-flex justify-content-between border-bottom py-2"><span><i class="bi bi-lightbulb text-warning"></i> Reduce prep qty: <b>Garden Fresh Salad</b> (18.4% wastage)</span><span class="badge-soft prio-Critical">Critical</span></div>
+          <div class="d-flex justify-content-between border-bottom py-2"><span><i class="bi bi-lightbulb text-warning"></i> Reprice loss-maker: <b>Paneer Tikka Platter</b></span><span class="badge-soft prio-Critical">Critical</span></div>
+          <div class="d-flex justify-content-between border-bottom py-2"><span><i class="bi bi-lightbulb text-warning"></i> Investigate <b>L08 Gurugram</b> (28% profit, 9.4% wastage)</span><span class="badge-soft prio-Critical">Critical</span></div>
+          <div class="d-flex justify-content-between border-bottom py-2"><span><i class="bi bi-lightbulb text-warning"></i> Promote Hidden Opportunity: <b>Saffron Risotto</b></span><span class="badge-soft prio-High">High</span></div>
+          <div class="d-flex justify-content-between py-2"><span><i class="bi bi-lightbulb text-warning"></i> Stop promotion trap: <b>Cheesy Nachos ₹99</b></span><span class="badge-soft prio-High">High</span></div>
+        </div>
+        <button class="btn btn-sm btn-outline-primary mt-2" onclick="navigate('recommend')">View All Recommendations <i class="bi bi-arrow-right"></i></button>
+      </div></div>
+      <div class="col-lg-6"><div class="card p-3 h-100">
+        <h6 class="fw-semibold mb-3"><i class="bi bi-exclamation-triangle text-danger me-1"></i> Detected Anomalies (Step 31, 30)</h6>
+        <table class="table table-sm small mb-0">
+          <thead><tr><th>Type</th><th>Entity</th><th>Detail</th><th>Severity</th></tr></thead>
+          <tbody>
+            <tr><td>Sales Spike</td><td>L01 Delhi</td><td>+240% vs baseline (12 Dec)</td><td><span class="badge-soft prio-Critical">High</span></td></tr>
+            <tr><td>Rating Flood</td><td>M013 Tandoori Roti</td><td>46 identical 5★ ratings in 1 hr</td><td><span class="badge-soft prio-Critical">High</span></td></tr>
+            <tr><td>Duplicate Txn</td><td>3,146 orders</td><td>Same ID, same amount, seconds apart</td><td><span class="badge-soft prio-High">Medium</span></td></tr>
+            <tr><td>Unusual Discount</td><td>Order #48213</td><td>72% discount (max allowed 30%)</td><td><span class="badge-soft prio-High">Medium</span></td></tr>
+            <tr><td>Demand Drop</td><td>M012 Veg Manchurian</td><td>-31% in 4 weeks</td><td><span class="badge-soft prio-Medium">Low</span></td></tr>
+          </tbody></table>
+      </div></div>
+    </div>
+  </section>
+
+  <!-- ============ 2. MENU INTELLIGENCE (Step 43, 9–11) ============ -->
+  <section class="view" id="view-menu">
+    <div class="card p-3 mb-3"><div class="d-flex gap-2 flex-wrap align-items-end">
+      <div><label class="form-label small mb-1">Performance Class</label>
+        <select class="form-select form-select-sm" id="mflt-class" onchange="renderMenuTable()"><option>All</option><option>Profit Driver</option><option>Volume Driver</option><option>Hidden Opportunity</option><option>Low Performer</option></select></div>
+      <div><label class="form-label small mb-1">Category</label>
+        <select class="form-select form-select-sm" id="mflt-cat" onchange="renderMenuTable()"><option>All</option><option>Main Course</option><option>Snacks</option><option>Beverages</option><option>Desserts</option><option>South Indian</option><option>Continental</option><option>Salads</option><option>Breads</option><option>North Indian</option><option>Indo-Chinese</option></select></div>
+      <div><label class="form-label small mb-1">Min Rating</label><input type="number" step="0.1" min="1" max="5" class="form-control form-control-sm" value="1"></div>
+      <div><label class="form-label small mb-1">Wastage % Max</label><input type="number" class="form-control form-control-sm" value="100"></div>
+      <div><label class="form-label small mb-1">Price Range ₹</label><div class="d-flex gap-1"><input class="form-control form-control-sm" style="width:90px" value="0"><input class="form-control form-control-sm" style="width:90px" value="999"></div></div>
+      <button class="btn btn-sm btn-primary" style="background:var(--primary);border:0" onclick="renderMenuTable()"><i class="bi bi-funnel"></i> Filter</button>
+    </div></div>
+    <div class="row g-3 mb-3">
+      <div class="col-6 col-lg-3"><div class="kpi"><small class="text-muted">PROFIT DRIVERS</small><div class="fs-4 fw-bold text-success">42 items</div></div></div>
+      <div class="col-6 col-lg-3"><div class="kpi"><small class="text-muted">VOLUME DRIVERS</small><div class="fs-4 fw-bold" style="color:#1864ab">38 items</div></div></div>
+      <div class="col-6 col-lg-3"><div class="kpi"><small class="text-muted">HIDDEN OPPORTUNITIES</small><div class="fs-4 fw-bold" style="color:#d9480f">27 items</div></div></div>
+      <div class="col-6 col-lg-3"><div class="kpi"><small class="text-muted">LOW PERFORMERS</small><div class="fs-4 fw-bold text-danger">43 items</div></div></div>
+    </div>
+    <div class="card p-3 mb-3">
+      <h6 class="fw-semibold mb-3"><i class="bi bi-grid-3x3-gap me-1" style="color:var(--primary)"></i> Profitability Quadrant — Demand vs Contribution Margin</h6>
+      <div class="chart-box"><canvas id="ch-quadrant"></canvas></div>
+    </div>
+    <div class="card p-3 mb-3">
+      <h6 class="fw-semibold mb-2"><i class="bi bi-table me-1" style="color:var(--primary)"></i> Menu Item Performance <span class="text-muted small">(tricky cases included — Step 11)</span></h6>
+      <div class="table-responsive"><table class="table table-sm table-hover small align-middle">
+        <thead><tr><th>ID</th><th>Item</th><th>Category</th><th>Qty Sold</th><th>Revenue</th><th>Margin %</th><th>Rating</th><th>Wastage %</th><th>Promo Dep.</th><th>Trend</th><th>Class</th></tr></thead>
+        <tbody id="menu-tbody"></tbody></table></div>
+    </div>
+    <div class="row g-3">
+      <div class="col-lg-6"><div class="card p-3 h-100">
+        <h6 class="fw-semibold mb-3 text-success"><i class="bi bi-trophy"></i> Top Performers</h6>
+        <ol class="small mb-0">
+          <li class="py-1 border-bottom">Butter Chicken — ₹18.4L · 62% margin · 4.6★</li>
+          <li class="py-1 border-bottom">Hyderabadi Biryani — ₹17.8L · 57% margin · 4.7★</li>
+          <li class="py-1 border-bottom">Chocolate Lava Cake — ₹7.3L · 66% margin · 4.8★</li>
+          <li class="py-1 border-bottom">Dal Makhani — ₹9.6L · 58% margin · 4.7★</li>
+        </ol></div></div>
+      <div class="col-lg-6"><div class="card p-3 h-100">
+        <h6 class="fw-semibold mb-3 text-danger"><i class="bi bi-turtle"></i> Slow-Moving Dishes (Step 32)</h6>
+        <ol class="small mb-0">
+          <li class="py-1 border-bottom">Veg Manchurian — -5% trend · 11.2% wastage · 3.6★</li>
+          <li class="py-1 border-bottom">Garden Fresh Salad — -2% trend · 18.4% wastage</li>
+          <li class="py-1 border-bottom">Soup of the Day — 44-day gap between purchases</li>
+        </ol></div></div>
+    </div>
+  </section>
+
+  <!-- ============ 3. CUSTOMER INTELLIGENCE (Step 44, 15–16, 36) ============ -->
+  <section class="view" id="view-customer">
+    <div class="row g-3 mb-3">
+      <div class="col-6 col-lg-3"><div class="kpi"><small class="text-muted">TOTAL CUSTOMERS</small><div class="fs-4 fw-bold">52,340</div></div></div>
+      <div class="col-6 col-lg-3"><div class="kpi"><small class="text-muted">HIGH-VALUE LOYAL</small><div class="fs-4 fw-bold text-success">4,210</div></div></div>
+      <div class="col-6 col-lg-3"><div class="kpi"><small class="text-muted">AT-RISK / CHURN</small><div class="fs-4 fw-bold text-danger">8,320</div></div></div>
+      <div class="col-6 col-lg-3"><div class="kpi"><small class="text-muted">PROMO-SENSITIVE</small><div class="fs-4 fw-bold" style="color:#d9480f">7,640</div></div></div>
+    </div>
+    <div class="row g-3 mb-3">
+      <div class="col-lg-4"><div class="card p-3"><h6 class="fw-semibold mb-3">Customer Segments</h6><div class="chart-box"><canvas id="ch-segments"></canvas></div></div></div>
+      <div class="col-lg-8"><div class="card p-3"><h6 class="fw-semibold mb-3">RFM Distribution (Step 16)</h6>
+        <div class="row g-2"><div class="col-4"><div class="chart-box-sm"><canvas id="ch-rfm-r"></canvas></div></div>
+        <div class="col-4"><div class="chart-box-sm"><canvas id="ch-rfm-f"></canvas></div></div>
+        <div class="col-4"><div class="chart-box-sm"><canvas id="ch-rfm-m"></canvas></div></div></div></div></div>
+    </div>
+    <div class="card p-3 mb-3">
+      <h6 class="fw-semibold mb-2"><i class="bi bi-people me-1" style="color:var(--primary)"></i> Segment Profiles & Targeting Strategy</h6>
+      <div class="table-responsive"><table class="table table-sm table-hover small align-middle">
+        <thead><tr><th>Segment</th><th>Customers</th><th>Avg Recency</th><th>Avg Frequency</th><th>Avg Monetary</th><th>AOV</th><th>Suggested Strategy</th></tr></thead>
+        <tbody id="seg-tbody"></tbody></table></div>
+    </div>
+    <div class="row g-3">
+      <div class="col-lg-6"><div class="card p-3 h-100">
+        <h6 class="fw-semibold mb-2 text-danger"><i class="bi bi-person-x"></i> Churn-Risk Customers (Step 36)</h6>
+        <table class="table table-sm small mb-0"><thead><tr><th>ID</th><th>Last Visit</th><th>Freq Drop</th><th>Spend Drop</th><th>Risk</th></tr></thead>
+        <tbody>
+          <tr><td>C10482</td><td>68 days ago</td><td>-62%</td><td>-54%</td><td><span class="badge-soft prio-Critical">High</span></td></tr>
+          <tr><td>C22910</td><td>71 days ago</td><td>-58%</td><td>-61%</td><td><span class="badge-soft prio-Critical">High</span></td></tr>
+          <tr><td>C07733</td><td>59 days ago</td><td>-41%</td><td>-38%</td><td><span class="badge-soft prio-High">Medium</span></td></tr>
+          <tr><td>C48120</td><td>55 days ago</td><td>-35%</td><td>-44%</td><td><span class="badge-soft prio-High">Medium</span></td></tr>
+        </tbody></table></div></div>
+      <div class="col-lg-6"><div class="card p-3 h-100">
+        <h6 class="fw-semibold mb-2 text-success"><i class="bi bi-gem"></i> High-Value Customers</h6>
+        <table class="table table-sm small mb-0"><thead><tr><th>ID</th><th>Segment</th><th>Monetary</th><th>AOV</th><th>Channel</th></tr></thead>
+        <tbody>
+          <tr><td>C00012</td><td>High-Value Loyal</td><td>₹2.14 L</td><td>₹3,120</td><td>Website/App</td></tr>
+          <tr><td>C00191</td><td>High-Value Loyal</td><td>₹1.86 L</td><td>₹2,840</td><td>Dine-in</td></tr>
+          <tr><td>C00456</td><td>High-Value Loyal</td><td>₹1.52 L</td><td>₹2,410</td><td>Dine-in</td></tr>
+          <tr><td>C00988</td><td>High-Value Loyal</td><td>₹1.44 L</td><td>₹2,260</td><td>Delivery</td></tr>
+        </tbody></table></div></div>
+    </div>
+  </section>
+
+  <!-- ============ 4. MARKET BASKET (Step 17–18) ============ -->
+  <section class="view" id="view-basket">
+    <div class="card p-3 mb-3">
+      <h6 class="fw-semibold mb-3"><i class="bi bi-basket me-1" style="color:var(--primary)"></i> Association Rules — Support / Confidence / Lift</h6>
+      <div class="table-responsive"><table class="table table-sm table-hover small align-middle">
+        <thead><tr><th>#</th><th>Item A (Antecedent)</th><th>Item B (Consequent)</th><th>Support</th><th>Confidence</th><th>Lift</th><th>Recommendation</th></tr></thead>
+        <tbody id="basket-tbody"></tbody></table></div>
+    </div>
+    <div class="row g-3">
+      <div class="col-lg-6"><div class="card p-3"><h6 class="fw-semibold mb-3">Lift by Item Pair</h6><div class="chart-box"><canvas id="ch-lift"></canvas></div></div></div>
+      <div class="col-lg-6"><div class="card p-3 h-100">
+        <h6 class="fw-semibold mb-3"><i class="bi bi-box-seam me-1 text-warning"></i> Bundle & Cross-Sell Suggestions (Step 18)</h6>
+        <ul class="small mb-0">
+          <li class="py-2 border-bottom"><b>Combo:</b> Butter Chicken + Garlic Naan + Lassi @ ₹449 <span class="badge-soft prio-High">Lift 3.8</span></li>
+          <li class="py-2 border-bottom"><b>Combo:</b> Masala Dosa + Filter Coffee @ ₹179 <span class="badge-soft prio-High">Lift 4.2</span></li>
+          <li class="py-2 border-bottom"><b>Upsell:</b> Add Lava Cake to Biryani orders (conf 39%)</li>
+          <li class="py-2"><b>Cross-sell:</b> Raita with Hyderabadi Biryani (conf 58%)</li>
+        </ul></div></div>
+    </div>
+  </section>
+
+  <!-- ============ 5. WASTAGE (Step 23–24, 45) ============ -->
+  <section class="view" id="view-wastage">
+    <div class="row g-3 mb-3">
+      <div class="col-6 col-lg-3"><div class="kpi"><small class="text-muted">TOTAL WASTAGE</small><div class="fs-4 fw-bold">6,630 kg</div></div></div>
+      <div class="col-6 col-lg-3"><div class="kpi"><small class="text-muted">WASTAGE COST</small><div class="fs-4 fw-bold text-danger">₹18.4 L</div></div></div>
+      <div class="col-6 col-lg-3"><div class="kpi"><small class="text-muted">% OF REVENUE</small><div class="fs-4 fw-bold">2.2%</div></div></div>
+      <div class="col-6 col-lg-3"><div class="kpi"><small class="text-muted">HIGH-RISK ITEMS (7d)</small><div class="fs-4 fw-bold" style="color:#d9480f">6 predicted</div></div></div>
+    </div>
+    <div class="row g-3 mb-3">
+      <div class="col-lg-7"><div class="card p-3"><h6 class="fw-semibold mb-3">Wastage Trend (Monthly)</h6><div class="chart-box"><canvas id="ch-wastetrend"></canvas></div></div></div>
+      <div class="col-lg-5"><div class="card p-3"><h6 class="fw-semibold mb-3">Wastage by Category</h6><div class="chart-box"><canvas id="ch-wastecat"></canvas></div></div></div>
+    </div>
+    <div class="card p-3">
+      <h6 class="fw-semibold mb-2"><i class="bi bi-trash3 me-1 text-danger"></i> High-Wastage Items & Risk Predictions</h6>
+      <div class="table-responsive"><table class="table table-sm table-hover small align-middle">
+        <thead><tr><th>Item</th><th>Wastage Qty</th><th>Cost</th><th>Primary Reason</th><th>Predicted Risk (7d)</th><th>Suggested Action</th></tr></thead>
+        <tbody id="waste-tbody"></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- ============ 6. PROMOTIONS & PRICING (Step 25–28) ============ -->
+  <section class="view" id="view-promotions">
+    <div class="card p-3 mb-3">
+      <h6 class="fw-semibold mb-2"><i class="bi bi-tags me-1" style="color:var(--primary)"></i> Promotion Effectiveness & Trap Detection <span class="text-muted small">(sales increase ≠ success — Step 27–28)</span></h6>
+      <div class="table-responsive"><table class="table table-sm table-hover small align-middle">
+        <thead><tr><th>Promo ID</th><th>Campaign</th><th>Order Lift</th><th>Revenue Lift</th><th>Margin Change</th><th>New Customers</th><th>Post-Promo Retention</th><th>Verdict</th></tr></thead>
+        <tbody id="promo-tbody"></tbody></table></div>
+    </div>
+    <div class="row g-3">
+      <div class="col-lg-6"><div class="card p-3">
+        <h6 class="fw-semibold mb-2"><i class="bi bi-currency-rupee me-1" style="color:var(--primary)"></i> Price-Sensitivity Classification (Step 26)</h6>
+        <table class="table table-sm small"><thead><tr><th>Item</th><th>Price ₹</th><th>Last Change</th><th>Demand Elasticity</th><th>Sensitivity</th></tr></thead>
+        <tbody id="price-tbody"></tbody></table></div></div>
+      <div class="col-lg-6"><div class="card p-3 h-100">
+        <h6 class="fw-semibold mb-2"><i class="bi bi-star-half me-1" style="color:var(--primary)"></i> Rating Insights (Step 29–30)</h6>
+        <ul class="small mb-0">
+          <li class="py-2 border-bottom">Best rated: Chocolate Lava Cake (4.8★) — also 66% margin ✔</li>
+          <li class="py-2 border-bottom">Poorly rated: Veg Manchurian (3.6★) — sales declining</li>
+          <li class="py-2 border-bottom"><span class="text-danger"><b>Anomaly:</b></span> M013 rating spike — 46 identical 5★ in 1 hour (flagged)</li>
+          <li class="py-2">High rating + low sales: Saffron Risotto 4.5★ — promote it</li>
+        </ul></div></div>
+    </div>
+  </section>
+
+  <!-- ============ 7. LOCATIONS (Step 33–34) ============ -->
+  <section class="view" id="view-locations">
+    <div class="card p-3 mb-3"><h6 class="fw-semibold mb-3">Revenue by Location</h6><div class="chart-box"><canvas id="ch-locbar"></canvas></div></div>
+    <div class="card p-3">
+      <h6 class="fw-semibold mb-2"><i class="bi bi-geo-alt me-1" style="color:var(--primary)"></i> Multi-Location Comparison (20 locations — top 8 shown)</h6>
+      <div class="table-responsive"><table class="table table-sm table-hover small align-middle">
+        <thead><tr><th>ID</th><th>Location</th><th>Revenue</th><th>Profit %</th><th>AOV</th><th>Customers</th><th>Repeat %</th><th>Wastage %</th><th>Rating</th><th>Status</th></tr></thead>
+        <tbody id="loc-tbody"></tbody></table></div>
+    </div>
+    <div class="alert alert-warning small mt-3"><i class="bi bi-info-circle"></i> <b>Location-specific insight (Step 34):</b> Hyderabadi Biryani = Profit Driver at L01/L03/L04, but Low Performer at L08 Gurugram (high wastage, low rating).</div>
+  </section>
+
+  <!-- ============ 8. FORECAST (Step 20–22, 46) ============ -->
+  <section class="view" id="view-forecast">
+    <div class="card p-3 mb-3"><div class="d-flex flex-wrap gap-2 align-items-end">
+      <div><label class="form-label small mb-1">Forecast Horizon</label>
+        <select class="form-select form-select-sm"><option>Next 7 days</option><option selected>Next 30 days</option><option>Next 90 days</option></select></div>
+      <div><label class="form-label small mb-1">Scope</label>
+        <select class="form-select form-select-sm"><option>All Items</option><option>By Category</option><option>By Location</option></select></div>
+      <div><label class="form-label small mb-1">Model</label>
+        <select class="form-select form-select-sm"><option>GBT Ensemble v1.3</option><option>Prophet Baseline</option></select></div>
+      <button class="btn btn-sm btn-primary" style="background:var(--primary);border:0" onclick="toast('Forecast regenerated (demo)')"><i class="bi bi-arrow-clockwise"></i> Re-forecast</button>
+      <div class="ms-auto small text-muted">Model v1.3 · chronological split · no data leakage ✔</div>
+    </div></div>
+    <div class="row g-3 mb-3">
+      <div class="col-6 col-lg-3"><div class="kpi"><small class="text-muted">MAE</small><div class="fs-4 fw-bold">142</div></div></div>
+      <div class="col-6 col-lg-3"><div class="kpi"><small class="text-muted">RMSE</small><div class="fs-4 fw-bold">189</div></div></div>
+      <div class="col-6 col-lg-3"><div class="kpi"><small class="text-muted">MAPE</small><div class="fs-4 fw-bold text-success">8.7%</div></div></div>
+      <div class="col-6 col-lg-3"><div class="kpi"><small class="text-muted">R²</small><div class="fs-4 fw-bold">0.91</div></div></div>
+    </div>
+    <div class="card p-3 mb-3">
+      <h6 class="fw-semibold mb-3"><i class="bi bi-graph-up-arrow me-1" style="color:var(--primary)"></i> Historical vs Forecast Demand (weekly)</h6>
+      <div class="chart-box"><canvas id="ch-forecast"></canvas></div>
+    </div>
+    <div class="card p-3">
+      <h6 class="fw-semibold mb-2"><i class="bi bi-exclamation-diamond me-1 text-danger"></i> High-Risk Demand Periods</h6>
+      <table class="table table-sm small mb-0"><thead><tr><th>Period</th><th>Scope</th><th>Predicted Lift</th><th>Risk</th><th>Action</th></tr></thead>
+      <tbody>
+        <tr><td>Sat–Sun next 4 weeks</td><td>All locations</td><td>+18%</td><td><span class="badge-soft prio-High">Stock-up</span></td><td>Increase inventory 22%</td></tr>
+        <tr><td>25–31 Dec (holiday)</td><td>Cakes & Desserts</td><td>+64%</td><td><span class="badge-soft prio-Critical">Critical</span></td><td>Pre-book production capacity</td></tr>
+        <tr><td>Week of 14 Jan</td><td>L08 Gurugram</td><td>-24%</td><td><span class="badge-soft prio-High">Overstock</span></td><td>Reduce prep quantity</td></tr>
+      </tbody></table>
+    </div>
+  </section>
+
+  <!-- ============ 9. DATA QUALITY & SPARK (Step 3–5, 12–18) ============ -->
+  <section class="view" id="view-quality">
+    <div class="row g-3 mb-3">
+      <div class="col-6 col-lg-3"><div class="kpi"><small class="text-muted">RAW RECORDS INGESTED</small><div class="fs-4 fw-bold">10,48,576</div></div></div>
+      <div class="col-6 col-lg-3"><div class="kpi"><small class="text-muted">CLEAN RECORDS</small><div class="fs-4 fw-bold text-success">10,21,600 (97.4%)</div></div></div>
+      <div class="col-6 col-lg-3"><div class="kpi"><small class="text-muted">QUARANTINED</small><div class="fs-4 fw-bold text-danger">12,104</div></div></div>
+      <div class="col-6 col-lg-3"><div class="kpi"><small class="text-muted">PARQUET OUTPUT</small><div class="fs-4 fw-bold">8 partitions ✔</div></div></div>
+    </div>
+    <ul class="nav nav-pills mb-3 small">
+      <li class="nav-item"><a class="nav-link active" data-bs-toggle="pill" href="#tab-dq"><i class="bi bi-clipboard-check"></i> Data Quality Report</a></li>
+      <li class="nav-item"><a class="nav-link" data-bs-toggle="pill" href="#tab-jobs"><i class="bi bi-lightning"></i> Spark Jobs</a></li>
+      <li class="nav-item"><a class="nav-link" data-bs-toggle="pill" href="#tab-audit"><i class="bi bi-clock-history"></i> Audit Log</a></li>
+    </ul>
+    <div class="tab-content">
+      <div class="tab-pane fade show active" id="tab-dq">
+        <div class="card p-3"><h6 class="fw-semibold mb-2">Data Quality Report (Step 4) & Cleaning Actions (Step 5)</h6>
+        <div class="table-responsive"><table class="table table-sm table-hover small align-middle">
+          <thead><tr><th>Issue Type</th><th>Records</th><th>Action Taken</th></tr></thead>
+          <tbody id="dq-tbody"></tbody></table></div></div>
+      </div>
+      <div class="tab-pane fade" id="tab-jobs">
+        <div class="card p-3"><h6 class="fw-semibold mb-2">Spark Job Monitoring (PySpark · local[8])</h6>
+        <div class="table-responsive"><table class="table table-sm table-hover small align-middle">
+          <thead><tr><th>Job</th><th>Status</th><th>Duration</th><th>Records</th><th>Output</th></tr></thead>
+          <tbody id="jobs-tbody"></tbody></table></div></div>
+      </div>
+      <div class="tab-pane fade" id="tab-audit">
+        <div class="card p-3"><h6 class="fw-semibold mb-2">Audit Trail (Step lxiii)</h6>
+        <table class="table table-sm small mb-0"><thead><tr><th>Timestamp</th><th>User</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr><td>2024-12-20 14:22</td><td>admin</td><td>Exported Menu Performance report (CSV)</td></tr>
+          <tr><td>2024-12-20 13:05</td><td>analyst</td><td>Retrained Python XGBoost model v1.1</td></tr>
+          <tr><td>2024-12-20 11:40</td><td>admin</td><td>Added restaurant location L20 — Indirapuram</td></tr>
+          <tr><td>2024-12-20 10:12</td><td>analyst</td><td>Ran Spark ingestion job — SUCCESS</td></tr>
+        </tbody></table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 10. SPARK vs PYTHON (Step 47, 14) ============ -->
+  <section class="view" id="view-compare">
+    <div class="row g-3 mb-3">
+      <div class="col-lg-4"><div class="card p-3 h-100 text-center">
+        <h6 class="fw-semibold">Overall Agreement</h6>
+        <div class="display-4 fw-bold text-success">87.4%</div>
+        <small class="text-muted">500 unseen records · disagreements: 63</small>
+        <hr><div class="chart-box-sm"><canvas id="ch-agree"></canvas></div>
+      </div></div>
+      <div class="col-lg-8"><div class="card p-3 h-100">
+        <h6 class="fw-semibold mb-3">Model Evaluation Metrics (Step 46)</h6>
+        <div class="table-responsive"><table class="table table-sm small align-middle">
+          <thead><tr><th>Pipeline</th><th>Algorithm</th><th>Version</th><th>Accuracy</th><th>Precision</th><th>Recall</th><th>F1 (macro)</th></tr></thead>
+          <tbody>
+            <tr><td><i class="bi bi-lightning-charge text-warning"></i> <b>Spark MLlib</b></td><td>Gradient-Boosted Trees</td><td>v1.2</td><td>88.2%</td><td>87.5%</td><td>86.9%</td><td>0.871</td></tr>
+            <tr><td><i class="bi bi-filetype-py text-primary"></i> <b>Python DS</b></td><td>XGBoost</td><td>v1.1</td><td>89.6%</td><td>89.1%</td><td>88.4%</td><td>0.887</td></tr>
+          </tbody></table></div>
+        <div class="alert alert-info small mt-3 mb-0"><i class="bi bi-info-circle"></i> <b>Disagreement explanation:</b> Python XGBoost uses promo-dependency as split feature earlier than Spark GBT, causing 41 of 63 mismatches on promotion-heavy items (e.g., M007 Cheesy Nachos). Remaining 22 mismatches occur on new items with insufficient history (M008).</div>
+      </div></div>
+    </div>
+    <div class="card p-3">
+      <h6 class="fw-semibold mb-2"><i class="bi bi-shuffle me-1" style="color:var(--primary)"></i> Record-Level Comparison — Menu Classification Task <small class="text-muted">(sample of 9 of 500)</small></h6>
+      <div class="table-responsive"><table class="table table-sm table-hover small align-middle">
+        <thead><tr><th>Record ID</th><th>Actual Class</th><th>Spark Prediction</th><th>Python Prediction</th><th>Status</th><th>Explanation</th></tr></thead>
+        <tbody id="cmp-tbody"></tbody></table></div>
+      <button class="btn btn-sm btn-outline-primary mt-2" onclick="toast('Comparison report downloaded (demo)')"><i class="bi bi-download"></i> Download Full Report (500 records)</button>
+    </div>
+  </section>
+
+  <!-- ============ 11. RECOMMENDATIONS (Step 37–39) ============ -->
+  <section class="view" id="view-recommend">
+    <div class="d-flex gap-2 mb-3">
+      <button class="btn btn-sm btn-outline-danger" onclick="filterRec('all')">All</button>
+      <button class="btn btn-sm btn-outline-danger" onclick="filterRec('Critical')">Critical</button>
+      <button class="btn btn-sm btn-outline-warning" onclick="filterRec('High')">High</button>
+      <button class="btn btn-sm btn-outline-primary" onclick="filterRec('Medium')">Medium</button>
+      <button class="btn btn-sm btn-outline-success" onclick="filterRec('Low')">Low</button>
+    </div>
+    <div class="row g-3" id="rec-cards"></div>
+  </section>
+
+  <!-- ============ 12. WHAT-IF (Step 40–41) ============ -->
+  <section class="view" id="view-whatif">
+    <div class="row g-3">
+      <div class="col-lg-5"><div class="card p-3 h-100">
+        <h6 class="fw-semibold mb-3"><i class="bi bi-sliders me-1" style="color:var(--primary)"></i> Scenario Configuration</h6>
+        <div class="mb-3"><label class="form-label small">Menu Item</label>
+          <select id="wi-item" class="form-select form-select-sm">
+            <option>M001 — Butter Chicken</option><option>M002 — Paneer Tikka Platter</option>
+            <option>M004 — Saffron Risotto</option><option>M006 — Garden Fresh Salad</option>
+            <option>M007 — Cheesy Nachos</option><option>M014 — Hyderabadi Biryani</option></select></div>
+        <div class="mb-3"><label class="form-label small">Price Change: <span id="wi-price-v" class="fw-bold">0%</span></label>
+          <input type="range" min="-30" max="30" value="0" class="form-range" id="wi-price" oninput="wiLbl()"></div>
+        <div class="mb-3"><label class="form-label small">Discount Change: <span id="wi-disc-v" class="fw-bold">0%</span></label>
+          <input type="range" min="0" max="40" value="0" class="form-range" id="wi-disc" oninput="wiLbl()"></div>
+        <div class="mb-3"><label class="form-label small">Promotion Frequency: <span id="wi-promo-v" class="fw-bold">0×</span></label>
+          <input type="range" min="0" max="4" value="0" class="form-range" id="wi-promo" oninput="wiLbl()"></div>
+        <div class="mb-3"><label class="form-label small">Prep Quantity Change: <span id="wi-waste-v" class="fw-bold">0%</span></label>
+          <input type="range" min="-40" max="40" value="0" class="form-range" id="wi-waste" oninput="wiLbl()"></div>
+        <div class="mb-3"><label class="form-label small">Assumed Demand Shift: <span id="wi-demand-v" class="fw-bold">0%</span></label>
+          <input type="range" min="-30" max="30" value="0" class="form-range" id="wi-demand" oninput="wiLbl()"></div>
+        <button class="btn btn-primary w-100" style="background:var(--primary);border:0" onclick="runScenario()"><i class="bi bi-play-fill"></i> Simulate Scenario</button>
+      </div></div>
+      <div class="col-lg-7"><div class="card p-3 h-100">
+        <h6 class="fw-semibold mb-3"><i class="bi bi-clipboard-data me-1" style="color:var(--primary)"></i> Estimated Impact <span class="badge bg-warning text-dark">SIMULATED ESTIMATE — not actual</span></h6>
+        <div class="table-responsive"><table class="table table-sm align-middle">
+          <thead><tr><th>Indicator</th><th>Current (Monthly)</th><th>Simulated</th><th>Change</th></tr></thead>
+          <tbody id="wi-result">
+            <tr class="text-muted"><td colspan="4" class="text-center py-4">Configure scenario and click <b>Simulate</b> to see impact on Revenue, Margin, Demand, Wastage & Profitability</td></tr>
+          </tbody></table></div>
+        <div id="wi-note" class="alert alert-warning small mt-2" style="display:none"><i class="bi bi-exclamation-triangle"></i> Outputs are <b>simulated estimates</b> based on price-elasticity model (e = 1.4). Validate before business decisions. (Step 41 compliance)</div>
+      </div></div>
+    </div>
+  </section>
+
+  <!-- ============ 13. REPORTS (Step 49–50) ============ -->
+  <section class="view" id="view-reports">
+    <div class="row g-3" id="rep-cards"></div>
+    <div class="card p-3 mt-3">
+      <h6 class="fw-semibold mb-2"><i class="bi bi-file-earmark-arrow-down me-1" style="color:var(--primary)"></i> Data Export (Step 50)</h6>
+      <div class="d-flex gap-2 flex-wrap">
+        <select class="form-select form-select-sm" style="width:260px"><option>Menu Performance Analysis</option><option>Customer Segments</option><option>Forecast Results</option><option>Comparison Report</option><option>Recommendations</option></select>
+        <select class="form-select form-select-sm" style="width:130px"><option>CSV</option><option>Excel (.xlsx)</option></select>
+        <button class="btn btn-sm btn-primary" style="background:var(--primary);border:0" onclick="toast('Export started (demo)')"><i class="bi bi-download"></i> Export Selected</button>
+        <small class="text-muted align-self-center">Export permission: Admin & Analyst only ✔ (RBAC)</small>
+      </div>
+    </div>
+  </section>
+
+  </div><!-- /p-3 -->
+</div><!-- /app -->
+
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:3000">
+  <div id="app-toast" class="toast align-items-center text-bg-dark border-0"><div class="d-flex">
+    <div class="toast-body" id="toast-msg">Done</div>
+    <button class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div></div>
+</div>
+
+<script>
+/* =====================================================
+   DEMO DATA — apne backend / Spark / Python pipeline ke
+   API responses se replace karna (fetch() calls add karo)
+   ===================================================== */
+const MENU=[
+ {id:'M001',n:'Butter Chicken',c:'Main Course',q:18420,r:'₹18.4L',m:62,rt:4.6,w:3.2,p:12,t:'+8%',cls:'Profit Driver'},
+ {id:'M002',n:'Paneer Tikka Platter',c:'Main Course',q:16240,r:'₹19.5L',m:-4,rt:4.2,w:6.5,p:45,t:'+3%',cls:'Low Performer'},
+ {id:'M003',n:'Dal Makhani',c:'Main Course',q:15980,r:'₹9.6L',m:58,rt:4.7,w:2.1,p:8,t:'+5%',cls:'Profit Driver'},
+ {id:'M004',n:'Saffron Risotto',c:'Continental',q:1240,r:'₹1.6L',m:71,rt:4.5,w:4.0,p:5,t:'+2%',cls:'Hidden Opportunity'},
+ {id:'M005',n:'Masala Dosa',c:'South Indian',q:14210,r:'₹7.8L',m:41,rt:4.4,w:5.2,p:10,t:'+4%',cls:'Volume Driver'},
+ {id:'M006',n:'Garden Fresh Salad',c:'Salads',q:9860,r:'₹4.4L',m:35,rt:3.8,w:18.4,p:6,t:'-2%',cls:'Low Performer'},
+ {id:'M007',n:'Cheesy Nachos',c:'Snacks',q:11240,r:'₹6.2L',m:28,rt:4.1,w:7.8,p:62,t:'+12%',cls:'Volume Driver'},
+ {id:'M008',n:'Truffle Pasta (NEW)',c:'Continental',q:310,r:'₹0.4L',m:55,rt:4.3,w:3.5,p:2,t:'new',cls:'Hidden Opportunity'},
+ {id:'M009',n:'Chole Bhature',c:'North Indian',q:13480,r:'₹8.9L',m:44,rt:4.5,w:6.1,p:9,t:'+6%',cls:'Volume Driver'},
+ {id:'M010',n:'Chocolate Lava Cake',c:'Desserts',q:12150,r:'₹7.3L',m:66,rt:4.8,w:2.8,p:15,t:'+9%',cls:'Profit Driver'},
+ {id:'M011',n:'Mango Lassi (Seasonal)',c:'Beverages',q:13840,r:'₹4.9L',m:52,rt:4.6,w:9.3,p:11,t:'+7%',cls:'Profit Driver'},
+ {id:'M012',n:'Veg Manchurian',c:'Indo-Chinese',q:8420,r:'₹4.6L',m:33,rt:3.6,w:11.2,p:20,t:'-5%',cls:'Low Performer'},
+ {id:'M013',n:'Tandoori Roti',c:'Breads',q:24800,r:'₹4.9L',m:48,rt:4.3,w:1.2,p:3,t:'+2%',cls:'Volume Driver'},
+ {id:'M014',n:'Hyderabadi Biryani',c:'Main Course',q:17650,r:'₹17.8L',m:57,rt:4.7,w:4.4,p:14,t:'+10%',cls:'Profit Driver'}];
+const SEGS=[
+ {s:'High-Value Loyal',n:4210,r:'6 days',f:34,m:'₹1.24L',aov:'₹2,340',st:'VIP perks, early menu access'},
+ {s:'Frequent',n:9480,r:'11 days',f:22,m:'₹68,000',aov:'₹980',st:'Loyalty points, bundles'},
+ {s:'Promotion-Driven',n:7640,r:'18 days',f:12,m:'₹41,000',aov:'₹720',st:'Margin-safe promos only'},
+ {s:'At-Risk',n:8320,r:'64 days',f:8,m:'₹38,000',aov:'₹690',st:'Win-back offers, re-engagement'},
+ {s:'New',n:6890,r:'4 days',f:2,m:'₹6,000',aov:'₹640',st:'Onboarding, first-repeat incentive'},
+ {s:'Occasional',n:15800,r:'41 days',f:5,m:'₹19,000',aov:'₹660',st:'Weekend campaigns, reminders'}];
+const BASKET=[
+ {a:'Butter Chicken',b:'Garlic Naan',s:'8.4%',cf:62,l:3.8,t:'Combo @ ₹449'},
+ {a:'Masala Dosa',b:'Filter Coffee',s:'6.1%',cf:55,l:4.2,t:'Combo @ ₹179'},
+ {a:'Hyderabadi Biryani',b:'Raita',s:'5.8%',cf:58,l:3.1,t:'Cross-sell'},
+ {a:'Chole Bhature',b:'Sweet Lassi',s:'4.2%',cf:44,l:2.8,t:'Cross-sell'},
+ {a:'Lava Cake',b:'Cold Coffee',s:'3.6%',cf:39,l:3.4,t:'Upsell'},
+ {a:'Paneer Tikka',b:'Mojito',s:'2.9%',cf:31,l:2.2,t:'Bundle'}];
+const WASTE=[
+ {i:'Garden Fresh Salad',q:'1,840 kg',c:'₹2.1L',rs:'Over-preparation (peak mismatch)',rk:'High',ac:'Cut prep qty 30%'},
+ {i:'Veg Manchurian',q:'1,120 kg',c:'₹1.3L',rs:'Declining demand',rk:'High',ac:'Remove/redesign recipe'},
+ {i:'Cheesy Nachos',q:'980 kg',c:'₹0.9L',rs:'Promo overstock',rk:'Medium',ac:'Sync prep with promo forecast'},
+ {i:'Paneer Tikka Platter',q:'860 kg',c:'₹1.1L',rs:'Over-prep + loss-making',rk:'High',ac:'Reprice + reduce batch size'},
+ {i:'Soup of the Day',q:'720 kg',c:'₹0.6L',rs:'Low frequency (44-day gaps)',rk:'Medium',ac:'Make-to-order only'},
+ {i:'Mango Lassi (off-season)',q:'610 kg',c:'₹0.4L',rs:'Seasonal demand ended',rk:'Low',ac:'Seasonal menu flag'}];
+const PROMOS=[
+ {id:'PROMO-101',n:'Flat 20% Off Weekends',o:'+38%',rv:'+12%',mg:'-9%',nc:'+2,100',pr:'31%',v:'Trap',why:'Sales ↑ but margin ↓; post-promo retention low'},
+ {id:'PROMO-102',n:'Buy-1-Get-1 Biryani',o:'+52%',rv:'+24%',mg:'+2%',nc:'+3,400',pr:'58%',v:'Effective',why:'Volume+revenue+margin all healthy'},
+ {id:'PROMO-103',n:'Free Dessert > ₹999',o:'+18%',rv:'+15%',mg:'+6%',nc:'+890',pr:'71%',v:'Effective',why:'AOV ↑, margin ↑, retention high'},
+ {id:'PROMO-104',n:'Cheesy Nachos ₹99',o:'+64%',rv:'+8%',mg:'-14%',nc:'+1,200',pr:'12%',v:'Trap',why:'Cannibalizes profitable snacks; promo-dependent sales'},
+ {id:'PROMO-105',n:'Loyalty Double Points',o:'+9%',rv:'+7%',mg:'+4%',nc:'+410',pr:'82%',v:'Effective',why:'Drives repeat purchases in loyal segment'}];
+const PRICES=[
+ {i:'Masala Dosa',p:149,ch:'+12% → 149',e:'-1.9',s:'Highly Sensitive'},
+ {i:'Paneer Tikka Platter',p:279,ch:'+8%',e:'-1.6',s:'Highly Sensitive'},
+ {i:'Cheesy Nachos',p:99,ch:'-22% promo',e:'-1.5',s:'Highly Sensitive'},
+ {i:'Butter Chicken',p:329,ch:'+5%',e:'-0.8',s:'Moderately Sensitive'},
+ {i:'Hyderabadi Biryani',p:289,ch:'+6%',e:'-0.4',s:'Low Sensitivity'},
+ {i:'Chocolate Lava Cake',p:189,ch:'+7%',e:'-0.3',s:'Low Sensitivity'}];
+const LOCS=[
+ {id:'L01',n:'CP, New Delhi',r:'₹1.28 Cr',p:39,a:720,c:9840,rp:'42%',w:4.1,rt:4.5,st:'Top Performer'},
+ {id:'L02',n:'Bandra, Mumbai',r:'₹1.12 Cr',p:37,a:690,c:8420,rp:'39%',w:5.2,rt:4.4,st:'Good'},
+ {id:'L03',n:'Koramangala, Bengaluru',r:'₹98 L',p:41,a:710,c:7980,rp:'44%',w:3.8,rt:4.6,st:'Best Margin'},
+ {id:'L04',n:'Banjara Hills, Hyderabad',r:'₹86 L',p:35,a:650,c:6540,rp:'36%',w:6.4,rt:4.2,st:'Good'},
+ {id:'L05',n:'Anna Nagar, Chennai',r:'₹72 L',p:33,a:620,c:5320,rp:'34%',w:7.1,rt:4.1,st:'Average'},
+ {id:'L06',n:'Park Street, Kolkata',r:'₹68 L',p:31,a:610,c:4980,rp:'33%',w:8.2,rt:4.0,st:'Average'},
+ {id:'L07',n:'Satellite, Ahmedabad',r:'₹54 L',p:36,a:580,c:3780,rp:'38%',w:5.0,rt:4.3,st:'Average'},
+ {id:'L08',n:'Sector 29, Gurugram',r:'₹48 L',p:28,a:640,c:3120,rp:'29%',w:9.4,rt:3.8,st:'Investigate'}];
+const CMP=[
+ {id:'M001',a:'Profit Driver',sp:'Profit Driver',py:'Profit Driver',x:'—'},
+ {id:'M002',a:'Low Performer',sp:'Low Performer',py:'Volume Driver',x:'Python ignores negative margin (feature scaling diff)'},
+ {id:'M004',a:'Hidden Opportunity',sp:'Hidden Opportunity',py:'Hidden Opportunity',x:'—'},
+ {id:'M005',a:'Volume Driver',sp:'Volume Driver',py:'Volume Driver',x:'—'},
+ {id:'M006',a:'Low Performer',sp:'Low Performer',py:'Volume Driver',x:'Python weights wastage lower'},
+ {id:'M007',a:'Volume Driver',sp:'Volume Driver',py:'Volume Driver',x:'—'},
+ {id:'M010',a:'Profit Driver',sp:'Profit Driver',py:'Hidden Opportunity',x:'Python volume threshold stricter'},
+ {id:'M013',a:'Volume Driver',sp:'Hidden Opportunity',py:'Volume Driver',x:'Spark demand z-score boundary case'},
+ {id:'M014',a:'Profit Driver',sp:'Profit Driver',py:'Profit Driver',x:'—'}];
+const DQ=[
+ ['Missing values','12,482','Imputed (mode/median) or quarantined'],
+ ['Duplicate orders','3,146','Removed (kept first occurrence)'],
+ ['Duplicate order-lines','5,890','Removed'],
+ ['Invalid menu prices','892','Corrected from Pricing_History'],
+ ['Negative quantities','2,104','Quarantined'],
+ ['Invalid dates','1,238','Quarantined'],
+ ['Invalid ratings (>5)','864','Removed'],
+ ['Missing Customer IDs','4,930','Marked as anonymous'],
+ ['Missing Menu IDs','1,106','Quarantined'],
+ ['Invalid restaurant IDs','486','Quarantined'],
+ ['Impossible wastage qty','322','Quarantined'],
+ ['Incorrect discounts','768','Recalculated from rules'],
+ ['Cancelled transactions','8,420','Excluded from revenue analytics'],
+ ['Inconsistent units','1,914','Standardized to kg/units']];
+const JOBS=[
+ ['ingest_raw_csv (multi-file)','SUCCESS','4m 12s','10,48,576','DataFrame + explicit schema'],
+ ['schema_validation','SUCCESS','38s','11 tables','Schema report JSON'],
+ ['data_cleaning','SUCCESS','6m 44s','10,21,600','Clean dataset + quarantine log'],
+ ['feature_engineering','SUCCESS','8m 05s','22 features','Features dataset'],
+ ['spark_sql_aggregations','SUCCESS','3m 22s','184 queries','Insight tables'],
+ ['mlib_gbt_training','SUCCESS','12m 18s','—','Model v1.2 (saved)'],
+ ['write_parquet','SUCCESS','2m 41s','8 partitions','parquet_data/ ✔']];
+const RECS=[
+ {t:'Reduce preparation quantity — Garden Fresh Salad',p:'Critical',ev:['18.4% wastage (5.7× chain average)','₹2.1L monthly wastage cost','-2% sales trend','3.8★ rating'],im:'Save ₹1.4L/month'},
+ {t:'Reprice Paneer Tikka Platter',p:'Critical',ev:['16,240 qty sold but -4% margin (loss-making)','45% promotion dependency','Highly price-elastic (-1.6)'],im:'Recover ₹3.2L/month margin'},
+ {t:'Investigate L08 Sector 29, Gurugram',p:'Critical',ev:['28% profit (lowest of 20 locations)','9.4% wastage (highest)','3.8★ rating','3 anomalies flagged this month'],im:'Prevent ₹9L/quarter leakage'},
+ {t:'Promote Hidden Opportunity — Saffron Risotto',p:'High',ev:['71% contribution margin (top 3%)','4.5★ average rating','Only 1,240 orders (low visibility)','82% repeat rate among existing buyers'],im:'+₹2.8L/month revenue potential'},
+ {t:'Stop PROMO-104 — Cheesy Nachos ₹99',p:'High',ev:['Order lift +64% but margin -14%','62% promo dependency','Post-promo retention only 12%','Cannibalizes higher-margin snacks'],im:'Protect ₹1.1L/month margin'},
+ {t:'Pre-stock for weekend + holiday peaks',p:'High',ev:['Forecast: +18% Sat–Sun demand','25–31 Dec desserts +64%','MAPE 8.7% (reliable)'],im:'Capture +₹4.6L holiday revenue'},
+ {t:'Bundle Butter Chicken + Garlic Naan combo',p:'Medium',ev:['Support 8.4%, Confidence 62%','Lift 3.8 (strong association)','Both items high-margin'],im:'+₹1.9L/month via combos'},
+ {t:'Win-back campaign — At-Risk segment (8,320)',p:'Medium',ev:['Avg recency 64 days','Frequency decline >40%','Historic value ₹38K avg'],im:'Recover ~1,900 customers'},
+ {t:'Retire / redesign Soup of the Day',p:'Low',ev:['44-day avg gap between purchases','₹0.6L wastage','Make-to-order already suggested'],im:'Save ₹0.5L/month'}];
+const REPORTS=['Menu Performance','Profitability Analysis','Customer Segmentation','Market-Basket Analysis','Demand Forecast','Wastage Report','Promotion Effectiveness','Pricing Analysis','Location Performance','Anomaly Report','Recommendations','Spark vs Python Comparison'];
+
+/* ================= HELPERS ================= */
+const $=id=>document.getElementById(id);
+function toast(m){ $('toast-msg').textContent=m; new bootstrap.Toast($('app-toast'),{delay:2500}).show(); }
+function mk(id,cfg){ const el=$(id); if(!el)return; const ex=Chart.getChart(el); if(ex)ex.destroy(); return new Chart(el,cfg); }
+const CLS_C={'Profit Driver':'success','Volume Driver':'primary','Hidden Opportunity':'warning','Low Performer':'danger'};
+const clsBadge=c=>`<span class="badge-soft" style="background:var(--bs-${CLS_C[c]}-bg-subtle);color:var(--bs-${CLS_C[c]}-text-emphasis)">${c}</span>`;
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const C1='#e8590c',C2='#1971c2',C3='#2f9e44',C4='#f08c00',C5='#e03131',CG='#6c757d';
+Chart.defaults.font.size=11;
+
+/* ================= LOGIN / RBAC ================= */
+const CREDS={admin:['admin123','Administrator'],manager:['manager123','Restaurant Manager'],analyst:['analyst123','Analyst']};
+function doLogin(){
+  const u=$('login-user').value.trim(),p=$('login-pass').value;
+  if(CREDS[u]&&CREDS[u][0]===p){
+    $('login-screen').style.display='none'; $('tb-user').textContent=u;
+    $('tb-role').textContent=CREDS[u][1].slice(0,8);
+    navigate('dashboard'); toast('Welcome, '+u+' — '+CREDS[u][1]);
+  } else { alert('Invalid credentials. Demo: admin/admin123'); }
+}
+function logout(){ location.reload(); }
+ $('login-pass').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
+
+/* ================= NAV ================= */
+document.querySelectorAll('[data-nav]').forEach(a=>a.addEventListener('click',()=>navigate(a.dataset.nav)));
+const TITLES={dashboard:'Executive Dashboard',menu:'Menu Intelligence',customer:'Customer Intelligence',basket:'Market Basket Analysis',wastage:'Wastage Intelligence',promotions:'Promotions & Pricing Intelligence',locations:'Multi-Location Intelligence',forecast:'Demand Forecast',quality:'Data Quality & Spark Operations',compare:'Dual-Pipeline Comparison (Spark vs Python)',recommend:'Recommendation Engine',whatif:'What-If Scenario Analysis',reports:'Reports & Data Export'};
+function navigate(v){
+  document.querySelectorAll('.view').forEach(s=>s.classList.remove('active'));
+  $('view-'+v).classList.add('active');
+  document.querySelectorAll('[data-nav]').forEach(a=>a.classList.toggle('active',a.dataset.nav===v));
+  $('page-title').textContent=TITLES[v]||'';
+  window.scrollTo(0,0);
+  (RENDER[v]||(()=>{}))();
+}
+function toggleSidebar(){ $('sidebar').classList.toggle('collapsed'); $('app').classList.toggle('expanded'); }
+
+/* ================= RENDERERS ================= */
+const RENDER={};
+
+RENDER.dashboard=()=>{
+  mk('ch-revtrend',{type:'line',data:{labels:MON,datasets:[
+    {label:'Revenue (₹L)',data:[62,58,71,68,74,79,72,76,81,88,96,95],borderColor:C1,backgroundColor:C1+'22',fill:true,tension:.35},
+    {label:'Profit (₹L)',data:[22,20,26,25,28,30,26,28,31,34,38,38],borderColor:C3,backgroundColor:'transparent',tension:.35}]},
+    options:{plugins:{legend:{position:'bottom'}},scales:{y:{title:{display:true,text:'₹ Lakh'}}}}});
+  mk('ch-channel',{type:'doughnut',data:{labels:['Dine-in','Delivery (3P)','Website/App','Takeaway'],
+    datasets:[{data:[38,27,21,14],backgroundColor:[C1,C2,C3,C4]}]},options:{plugins:{legend:{position:'bottom'}},cutout:'58%'}});
+  mk('ch-peakhours',{type:'bar',data:{labels:['8a','9a','10a','11a','12p','1p','2p','3p','4p','5p','6p','7p','8p','9p','10p','11p'],
+    datasets:[{label:'Orders',data:[4,6,5,7,12,19,14,8,6,7,11,17,21,15,9,5],backgroundColor:r=>r.raw>=15?C1:'#f4b28c'}]},
+    options:{plugins:{legend:{display:false}}}});
+  mk('ch-classdist',{type:'bar',data:{labels:['Profit Driver','Volume Driver','Hidden Opportunity','Low Performer'],
+    datasets:[{label:'Items',data:[42,38,27,43],backgroundColor:[C3,C2,C4,C5]}]},
+    options:{indexAxis:'y',plugins:{legend:{display:false}}}});
+};
+
+function renderMenuTable(){
+  const cl=$('mflt-class').value, cat=$('mflt-cat').value;
+  $('menu-tbody').innerHTML=MENU.filter(m=>(cl==='All'||m.cls===cl)&&(cat==='All'||m.c===cat))
+   .map(m=>`<tr><td>${m.id}</td><td><b>${m.n}</b></td><td>${m.c}</td><td>${m.q.toLocaleString('en-IN')}</td>
+   <td>${m.r}</td><td class="${m.m<0?'text-danger fw-bold':''}">${m.m}%</td><td>${m.rt}★</td>
+   <td class="${m.w>10?'text-danger fw-bold':''}">${m.w}%</td><td>${m.p}%</td><td>${m.t}</td><td>${clsBadge(m.cls)}</td></tr>`).join('');
+}
+RENDER.menu=()=>{
+  renderMenuTable();
+  const sets={'Profit Driver':C3,'Volume Driver':C2,'Hidden Opportunity':C4,'Low Performer':C5};
+  const data={datasets:Object.keys(sets).map(k=>({label:k,backgroundColor:sets[k]+'cc',
+    pointRadius:6,pointHoverRadius:8,data:MENU.filter(m=>m.cls===k).map(m=>({x:m.q,y:m.m,label:m.n}))}))};
+  mk('ch-quadrant',{type:'scatter',data,options:{
+    plugins:{tooltip:{callbacks:{label:c=>` ${c.raw.label}: (${c.parsed.x.toLocaleString('en-IN')} qty, ${c.parsed.y}% margin)`}},legend:{position:'bottom'}},
+    scales:{x:{title:{display:true,text:'Demand (Qty Sold)'},suggestedMin:0},y:{title:{display:true,text:'Contribution Margin %'}}}}});
+};
+
+RENDER.customer=()=>{
+  mk('ch-segments',{type:'doughnut',data:{labels:SEGS.map(s=>s.s),
+    datasets:[{data:SEGS.map(s=>s.n),backgroundColor:[C3,C2,C4,C5,C1,'#862e9c']}]},
+    options:{plugins:{legend:{position:'bottom'}},cutout:'55%'}});
+  mk('ch-rfm-r',{type:'bar',data:{labels:['0-7d','8-14d','15-30d','31-60d','60d+'],datasets:[{label:'Recency %',data:[18,14,22,24,22],backgroundColor:C1}]},options:{plugins:{legend:{display:false}}}});
+  mk('ch-rfm-f',{type:'bar',data:{labels:['1-5','6-10','11-20','21+'],datasets:[{label:'Frequency %',data:[31,27,22,20],backgroundColor:C2}]},options:{plugins:{legend:{display:false}}}});
+  mk('ch-rfm-m',{type:'bar',data:{labels:['<5K','5-10K','10-25K','25K+'],datasets:[{label:'Monetary %',data:[26,24,28,22],backgroundColor:C3}]},options:{plugins:{legend:{display:false}}}});
+  $('seg-tbody').innerHTML=SEGS.map(s=>`<tr><td><b>${s.s}</b></td><td>${s.n.toLocaleString('en-IN')}</td><td>${s.r}</td><td>${s.f}/yr</td><td>${s.m}</td><td>${s.aov}</td><td class="small text-muted">${s.st}</td></tr>`).join('');
+};
+
+RENDER.basket=()=>{
+  $('basket-tbody').innerHTML=BASKET.map((b,i)=>`<tr><td>${i+1}</td><td><b>${b.a}</b></td><td><b>${b.b}</b></td><td>${b.s}</td><td>${b.cf}%</td>
+  <td><span class="badge-soft ${b.l>=3?'stat-match':'prio-Medium'}">${b.l}</span></td><td class="small">${b.t}</td></tr>`).join('');
+  mk('ch-lift',{type:'bar',data:{labels:BASKET.map(b=>b.a+' + '+b.b),
+    datasets:[{label:'Lift',data:BASKET.map(b=>b.l),backgroundColor:BASKET.map(b=>b.l>=3?C3:C4)}]},
+    options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
+};
+
+RENDER.wastage=()=>{
+  mk('ch-wastetrend',{type:'line',data:{labels:MON,datasets:[{label:'Wastage (₹L)',data:[1.4,1.5,1.3,1.4,1.6,1.8,1.7,1.5,1.4,1.6,2.1,1.9],borderColor:C5,backgroundColor:C5+'22',fill:true,tension:.35}]},
+    options:{plugins:{legend:{position:'bottom'}}}});
+  mk('ch-wastecat',{type:'bar',data:{labels:['Salads','Indo-Chinese','Snacks','Main Course','Soups','Beverages'],
+    datasets:[{label:'Cost ₹L',data:[2.1,1.3,0.9,1.1,0.6,0.4],backgroundColor:C5}]},options:{indexAxis:'y',plugins:{legend:{display:false}}}});
+  $('waste-tbody').innerHTML=WASTE.map(w=>`<tr><td><b>${w.i}</b></td><td>${w.q}</td><td class="text-danger">${w.c}</td><td>${w.rs}</td>
+  <td><span class="badge-soft ${w.rk==='High'?'prio-Critical':w.rk==='Medium'?'prio-High':'prio-Medium'}">${w.rk}</span></td><td class="small">${w.ac}</td></tr>`).join('');
+};
+
+RENDER.promotions=()=>{
+  $('promo-tbody').innerHTML=PROMOS.map(p=>`<tr><td>${p.id}</td><td><b>${p.n}</b></td><td class="text-success">${p.o}</td><td>${p.rv}</td>
+  <td class="${p.mg.includes('-')?'text-danger fw-bold':'text-success'}">${p.mg}</td><td>${p.nc}</td><td>${p.pr}</td>
+  <td><span class="badge-soft ${p.v==='Trap'?'prio-Critical':'stat-match'}">${p.v==='Trap'?'⚠ Promotion Trap':'✔ Effective'}</span><div class="small text-muted">${p.why}</div></td></tr>`).join('');
+  const sc={'Highly Sensitive':'prio-Critical','Moderately Sensitive':'prio-High','Low Sensitivity':'stat-match'};
+  $('price-tbody').innerHTML=PRICES.map(p=>`<tr><td>${p.i}</td><td>₹${p.p}</td><td class="small">${p.ch}</td><td>${p.e}</td><td><span class="badge-soft ${sc[p.s]}">${p.s}</span></td></tr>`).join('');
+};
+
+RENDER.locations=()=>{
+  mk('ch-locbar',{type:'bar',data:{labels:LOCS.map(l=>l.id+' '+l.n.split(',')[0]),
+    datasets:[{label:'Revenue (₹L)',data:[128,112,98,86,72,68,54,48],backgroundColor:C1}]},
+    options:{plugins:{legend:{display:false}},scales:{x:{ticks:{maxRotation:45,font:{size:9}}}}}});
+  $('loc-tbody').innerHTML=LOCS.map(l=>`<tr><td>${l.id}</td><td><b>${l.n}</b></td><td>${l.r}</td>
+  <td class="${l.p<31?'text-danger fw-bold':''}">${l.p}%</td><td>₹${l.a}</td><td>${l.c.toLocaleString('en-IN')}</td><td>${l.rp}</td>
+  <td class="${parseFloat(l.w)>8?'text-danger fw-bold':''}">${l.w}%</td><td>${l.rt}★</td>
+  <td><span class="badge-soft ${l.st==='Investigate'?'prio-Critical':l.st.includes('Top')||l.st.includes('Best')?'stat-match':'prio-Medium'}">${l.st}</span></td></tr>`).join('');
+};
+
+RENDER.forecast=()=>{
+  const L=[]; for(let i=1;i<=18;i++)L.push('W'+i); for(let i=19;i<=24;i++)L.push('W'+i+' (F)');
+  const hist=[3.1,3.3,3.0,3.4,3.6,3.8,3.5,3.7,3.9,4.1,3.8,4.0,4.2,4.4,4.1,4.3,4.5,4.6];
+  const fc=[...Array(18).fill(null),4.8,5.0,5.2,4.9,5.4,5.6];
+  const act=[...Array(20).fill(null),4.7,4.9,5.1,4.8];
+  mk('ch-forecast',{type:'line',data:{labels:L,datasets:[
+    {label:'Historical Demand',data:hist,borderColor:C2,tension:.3,spanGaps:false},
+    {label:'Forecast',data:fc,borderColor:C1,borderDash:[6,4],tension:.3,spanGaps:false},
+    {label:'Actual (eval)',data:act,borderColor:C3,pointRadius:4,tension:.3,spanGaps:false}]},
+    options:{plugins:{legend:{position:'bottom'}},scales:{y:{title:{display:true,text:'Orders (000s)'}}}}});
+};
+
+RENDER.quality=()=>{
+  $('dq-tbody').innerHTML=DQ.map(d=>`<tr><td>${d[0]}</td><td>${d[1]}</td><td class="small">${d[2]}</td></tr>`).join('');
+  $('jobs-tbody').innerHTML=JOBS.map(j=>`<tr><td><code>${j[0]}</code></td>
+  <td><span class="badge-soft stat-match">● ${j[1]}</span></td><td>${j[2]}</td><td>${j[3]}</td><td class="small">${j[4]}</td></tr>`).join('');
+};
+
+RENDER.compare=()=>{
+  mk('ch-agree',{type:'doughnut',data:{labels:['Match (437)','Mismatch (63)'],
+    datasets:[{data:[87.4,12.6],backgroundColor:[C3,C5]}]},options:{cutout:'62%',plugins:{legend:{position:'bottom'}}}});
+  $('cmp-tbody').innerHTML=CMP.map(c=>{ const m=c.sp===c.py;
+    return `<tr><td>${c.id}</td><td>${c.a}</td><td>${clsBadge(c.sp)}</td><td>${clsBadge(c.py)}</td>
+    <td><span class="badge-soft ${m?'stat-match':'stat-mismatch'}">${m?'✔ Match':'✖ Mismatch'}</span></td>
+    <td class="small text-muted">${c.x}</td></tr>`;}).join('');
+};
+
+function filterRec(p){
+  $('rec-cards').innerHTML=RECS.filter(r=>p==='all'||r.p===p).map(r=>`
+  <div class="col-md-6 col-xl-4"><div class="card p-3 h-100">
+    <div class="d-flex justify-content-between align-items-start mb-2">
+      <span class="badge-soft prio-${r.p}">${r.p} Priority</span>
+      <small class="text-muted">Evidence-based</small></div>
+    <h6 class="fw-semibold">${r.t}</h6>
+    <div class="small mb-2"><b class="text-muted">Reason / Evidence (Step 38):</b>
+      <ul class="mb-2 mt-1 ps-3">${r.ev.map(e=>`<li>${e}</li>`).join('')}</ul></div>
+    <div class="small text-success mb-2"><i class="bi bi-graph-up-arrow"></i> Est. impact: <b>${r.im}</b></div>
+    <div class="d-flex gap-2 mt-auto">
+      <button class="btn btn-sm btn-outline-primary" onclick="toast('Action accepted (demo)')">Accept</button>
+      <button class="btn btn-sm btn-outline-secondary" onclick="toast('Dismissed & logged (demo)')">Dismiss</button></div>
+  </div></div>`).join('');
+}
+RENDER.recommend=()=>filterRec('all');
+
+/* ---- What-If (Step 40–41) ---- */
+function wiLbl(){ ['price','disc','promo','waste','demand'].forEach(k=>{
+  const v=$('wi-'+k).value; const sfx=k==='promo'?'×':'%'; $(k==='promo'?'wi-promo-v':'wi-'+k+'-v').textContent=v+sfx; }); }
+function runScenario(){
+  const p=+$('wi-price').value, d=+$('wi-disc').value, pr=+$('wi-promo').value,
+        wf=+$('wi-waste').value, dm=+$('wi-demand').value;
+  const elast=1.4, baseR=620000, baseM=0.58, baseQ=14200, baseW=0.06;
+  const demCh=(-elast*p/100)+(dm/100)+(pr*0.012)-(d/100)*0.8;          // demand response
+  const priceEff=(1+p/100)*(1-d/100)-1;                                // net price change
+  const revCh=(1+priceEff)*(1+demCh)-1;
+  const marg=baseM+priceEff*0.55+(wf/100)*0.002;                       // prep cut hurts margin a bit
+  const waste=baseW+(wf/100)*0.6-demCh*0.4;
+  const rev=baseR*(1+revCh), prof=rev*Math.max(marg,0), qty=baseQ*(1+demCh), wc=rev*Math.max(waste,0);
+  const f=(v,pre,sf)=>(pre??'')+Math.round(v).toLocaleString('en-IN')+(sf??'');
+  const pc=(a,b)=>{const c=(b/a-1)*100;return `<span class="${c>=0?'text-success':'text-danger'}">${c>=0?'+':''}${c.toFixed(1)}%</span>`;};
+  $('wi-result').innerHTML=`
+   <tr><td>Quantity Sold</td><td>${f(baseQ)}</td><td>${f(qty)}</td><td>${pc(baseQ,qty)}</td></tr>
+   <tr><td>Revenue</td><td>₹${f(baseR/100000)} L</td><td>₹${f(rev/100000)} L</td><td>${pc(baseR,rev)}</td></tr>
+   <tr><td>Contribution Margin</td><td>${(baseM*100).toFixed(0)}%</td><td>${(Math.max(marg,0)*100).toFixed(1)}%</td><td>${(marg-baseM>=0?'<span class="text-success">':'<span class="text-danger">')+((marg-baseM)*100).toFixed(1)+' pts</span>'}</td></tr>
+   <tr><td>Profit</td><td>₹${f(baseR*baseM/100000)} L</td><td>₹${f(prof/100000)} L</td><td>${pc(baseR*baseM,prof)}</td></tr>
+   <tr><td>Wastage (of revenue)</td><td>${(baseW*100).toFixed(1)}%</td><td>${(Math.max(waste,0)*100).toFixed(1)}%</td><td>${(waste-baseW<=0?'<span class="text-success">':'<span class="text-danger">')+((waste-baseW)*100).toFixed(1)+' pts</span>'}</td></tr>`;
+  $('wi-note').style.display='block';
+}
+RENDER.whatif=()=>{};
+
+RENDER.reports=()=>{
+  $('rep-cards').innerHTML=REPORTS.map(r=>`
+  <div class="col-md-6 col-lg-4 col-xl-3"><div class="card p-3 h-100 text-center">
+    <i class="bi bi-file-earmark-bar-graph fs-1 text-secondary"></i>
+    <div class="fw-semibold small mt-2">${r} Report</div>
+    <div class="btn-group btn-group-sm mt-3 w-100">
+      <button class="btn btn-outline-primary" onclick="toast('${r} — CSV download (demo)')"><i class="bi bi-filetype-csv"></i> CSV</button>
+      <button class="btn btn-outline-success" onclick="toast('${r} — Excel download (demo)')"><i class="bi bi-file-earmark-excel"></i> Excel</button></div>
+  </div></div>`).join('');
+};
+</script>
+</body>
+</html>
