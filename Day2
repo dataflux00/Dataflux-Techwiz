@@ -1,0 +1,47 @@
+# Day 2: Cleaning, Integration and Menu Intelligence
+
+**Date:** __25__ / __SEP__ / 2026
+**Goal:** Clean the data, join all tables, engineer features, and classify the menu.
+
+## Tasks
+
+| Member | Task | Files | Status |
+|---|---|---|---|
+| A | Data quality report and documented cleaning rules | `spark_jobs/02_data_quality.py`, `03_cleaning.py` | [ ] |
+| B | Spark SQL / PySpark joins across all tables, feature engineering | `spark_jobs/04_integrate.py`, `05_feature_engineering.py`, `spark_sql/` | [ ] |
+| C | EDA (top/lowest sellers, highest profit, high wastage, best/worst rated), menu profitability | `spark_jobs/06_eda.py`, `src/analytics/profitability.py` | [ ] |
+| D | Menu classification (Profit Driver, Volume Driver, Hidden Opportunity, Low Performer), tricky cases, web app skeleton | `src/analytics/menu_classification.py`, `src/app.py` | [ ] |
+
+## Checks
+
+- [ ] Data quality report covers: missing values, duplicate orders and order lines, invalid prices, negative quantities, invalid dates and ratings, cancelled orders
+- [ ] Every cleaning decision is recorded (remove, fix, or quarantine)
+- [ ] Required joins done: orders-customers, orders-items, items-menu, menu-categories, orders-locations, orders-promotions, menu-pricing, menu-ratings, menu-inventory, menu-wastage
+- [ ] Features: revenue, cost, margin, profit %, RFM, wastage %, promotion dependency, basket size, price-change %
+- [ ] Classification is data-driven, not based on a single hardcoded field
+- [ ] Tricky cases handled: high-selling loss-making dish, profitable but rare dish, popular high-wastage dish, new item with little history
+
+## Suggested Commits
+
+- `feat: data quality report`
+- `feat: cleaning rules with quarantine table`
+- `feat: Spark SQL joins and feature engineering`
+- `feat: EDA and menu profitability`
+- `feat: menu classification with tricky cases`
+
+## Dev Log (Day 2)
+
+| Item | Notes |
+|---|---|
+| Work completed | |
+| Dataset changes | |
+| Data-quality problems | |
+| Spark failures | |
+| Tests performed | |
+
+## End-of-Day Checklist
+
+- [ ] Every member made at least one commit
+- [ ] Dev log updated
+- [ ] Cleaned data saved to `processed_data/` and `parquet_data/`
+- [ ] Everyone can explain their module
