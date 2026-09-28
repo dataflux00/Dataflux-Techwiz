@@ -1,0 +1,48 @@
+# Day 1: Data Foundation
+
+**Date:** _24___/ __Sep__ / 2026
+**Goal:** Build the dataset, store it, and ingest it with Spark.
+
+## Tasks
+
+| Member | Task | Files | Status |
+|---|---|---|---|
+| A | Generate master tables: Customers, Menu_Items, Menu_Categories, Restaurants, Pricing_History | `data_generator/generate_master.py` | [ ] |
+| B | Generate transaction tables: Orders, Order_Items, Promotions, Ratings, Inventory, Wastage, with injected defects | `data_generator/generate_transactions.py` | [ ] |
+| C | Spark ingestion with explicit schema, schema inference, partitioning, Parquet output | `spark_jobs/01_ingest.py` | [ ] |
+| D | Repo structure, README, AI_USAGE.md, DEV_LOG.md, ER diagram, database schema | `database/schema.sql`, `documentation/` | [ ] |
+
+## Dataset Targets
+
+- [ ] 1,000,000+ order-line records
+- [ ] 100,000+ orders and 50,000+ customers
+- [ ] 150+ menu items across 10+ categories
+- [ ] 20+ locations, 12+ months of history
+- [ ] 100,000+ ratings, 50,000+ wastage records
+- [ ] Defects injected: missing values, duplicates, cancelled orders, invalid prices, negative quantities, anomalies, seasonal and weekend patterns, misleading promotions
+- [ ] At least one dataset saved as Parquet
+
+## Suggested Commits
+
+- `chore: initial repo structure and README skeleton`
+- `feat: add master data generator`
+- `feat: add transaction data generator with defects`
+- `feat: add Spark ingestion with explicit schema and Parquet`
+- `docs: add ER diagram and DB schema`
+
+## Dev Log (Day 1)
+
+| Item | Notes |
+|---|---|
+| Work completed | |
+| Dataset changes | |
+| Data-quality problems | |
+| Spark failures | |
+| Tests performed | |
+
+## End-of-Day Checklist
+
+- [ ] Every member made at least one commit
+- [ ] Dev log updated
+- [ ] AI tools used are noted in AI_USAGE.md
+- [ ] Everyone can explain their module
