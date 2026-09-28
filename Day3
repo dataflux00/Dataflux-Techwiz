@@ -1,0 +1,49 @@
+# Day 3: ML Models and Dual Pipeline
+
+**Date:** __26__ / __9__ / 2026
+**Goal:** Train Spark MLlib and Python models independently, compare them, and build segmentation and basket analysis.
+
+## Tasks
+
+| Member | Task | Files | Status |
+|---|---|---|---|
+| A | Spark MLlib: train 3+ algorithms, compare, select and save the final model | `spark_jobs/07_mllib_models.py`, `models/spark/` | [ ] |
+| B | Independent Python pipeline (Pandas, Scikit-learn, XGBoost) on the same task and records | `python_pipeline/train_models.py`, `models/python/` | [ ] |
+| C | Dual-pipeline comparison on 100+ unseen records | `python_pipeline/compare_pipelines.py`, `reports/` | [ ] |
+| D | RFM and customer segmentation, market-basket analysis (support, confidence, lift), bundle recommendations | `src/analytics/segmentation.py`, `basket_analysis.py` | [ ] |
+
+## Checks
+
+- [ ] Data split into train / validation / test
+- [ ] Spark: at least 3 algorithms (e.g. Logistic Regression, Random Forest, GBT) with metrics and the final choice justified
+- [ ] Python: separate preprocessing and features; accuracy, precision, recall, F1, confusion matrix
+- [ ] Spark and Python trained independently, with no predictions copied between pipelines
+- [ ] Comparison report has: record ID, actual, Spark result, Python result, match/mismatch, difference, explanation of disagreements, overall agreement %
+- [ ] Target: accuracy of 85%+ or macro F1 of 0.80+
+- [ ] RFM calculated per customer; segments defined (High-Value Loyal, Frequent, Promotion-Driven, At-Risk, New, Occasional)
+- [ ] Basket rules show support, confidence and lift with bundle and cross-sell suggestions
+
+## Suggested Commits
+
+- `feat: Spark MLlib models and model selection`
+- `feat: independent Python ML pipeline`
+- `feat: dual-pipeline comparison report`
+- `feat: RFM and customer segmentation`
+- `feat: market-basket analysis`
+
+## Dev Log (Day 3)
+
+| Item | Notes |
+|---|---|
+| Work completed | |
+| Model failures | |
+| Spark failures | |
+| Spark vs Python agreement % | |
+| Tests performed | |
+
+## End-of-Day Checklist
+
+- [ ] Every member made at least one commit
+- [ ] Dev log updated
+- [ ] Model versions recorded
+- [ ] Everyone can explain why the two pipelines disagree where they do
